@@ -5,9 +5,12 @@ import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-load_dotenv()
+import validators
 
-BOT_TOKEN = str(os.getenv('DISCORD_TOKEN'))
+load_dotenv(verbose=True)
+
+BOT_TOKEN = str(os.getenv("DISCORD_TOKEN"))
+bot = discord.Client()
 
 description = (
     """A simple bot that pastes the contents of the linked message to the channel."""
@@ -15,9 +18,45 @@ description = (
 
 intents = discord.Intents.default()
 intents.members = True
-intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", description=description, intents=intents)
+
+
+# Defines a function that checks if the string passed is a valid discord message URL.
+# The function takes a message and a guild ID as arguments and returns a boolean.
+def is_message_url(message: str, reference_guild_id) -> bool: # reference_guild_id is derived from message.guild of the original message context.
+    # If the message is not a valid URL, return False.
+    if not validators.url(message):
+        return False
+
+    # First split the url on slashes.
+    url_split = message.split("/")
+    # Then, unpack the guild ID, channel ID, and message IDs, as ints, from url_split.
+    guild_id, channel_id, message_id = (
+        int(url_split[4]),
+        int(url_split[5]),
+        int(url_split[6]),
+    )
+    # Create a guild object from the guild ID.
+    guild_object = bot.get_guild(guild_id)
+    if reference_guild_id != guild_object:
+        return False
+    # Create a channel object from the channel ID.
+    channel_object = guild_object.get_channel(channel_id)
+    # Create a message object from the message ID.
+    message_object = channel_object.fetch_message(message_id)
+    # Get the message from the message object.
+    # Make sure to handle possible exceptions.
+    # Possible exceptions include: NotFound, Forbidden, and HTTPException.
+    try:
+        message_content = message_object.content
+    except discord.NotFound:
+        return False
+    except discord.Forbidden:
+        return False
+    except discord.HTTPException:
+        return False
+    return True
 
 
 @bot.event
@@ -28,46 +67,17 @@ async def on_ready():
     print("------")
 
 
-# Up next is a function that takes a link to a message and sends the contents of the message. The contents that
-# should be sent are the message contents and the message author, and the message timestamp. The message timestamp
-# uses the format <t:TIMESTAMP> where TIMESTAMP is the message timestamp in epoch seconds. The function also posts
-# the original channel the message was sent in.
+# Start a function that runs on every message.
+@bot.event
+async def on_message(message):
+    # If the message is from a bot, ignore it.
+    if message.author.bot:
+        return
+
+    # If the message is from a user, and the message starts with the prefix,
+    # then run the function.
+    if message.content.startswith("http"):
+        print(is_message_url(message.content, message.guild))
 
 
-@bot.command()
-async def message_quote(ctx, link):
-    """
-    Sends the contents of a message to the channel.
-    """
-    # The link is split into the message ID and the channel ID.
-    link = link.split("/")
-    message_id = link[-1]
-    channel_id = link[-2]
-    # The message is retrieved from the message ID and channel ID.
-    message = await bot.get_channel(int(channel_id)).fetch_message(int(message_id))
-    # The message contents are retrieved from the message.
-    message_contents = message.content
-    # Turn message_contents into a quote, by adding a right angle bracket and a space after each newline.
-    message_contents = message_contents.replace("\n", "\n> ")
-    # The message author is retrieved from the message.
-    message_author = message.author
-    # The message timestamp is retrieved from the message.
-    message_timestamp = message.created_at
-    # The message timestamp is converted to epoch seconds.
-    message_timestamp = message_timestamp.timestamp()
-    # The message timestamp is converted to a string.
-    message_timestamp = str(message_timestamp)
-    # The message timestamp is formatted as <t:TIMESTAMP> where TIMESTAMP is the message timestamp in epoch seconds.
-    message_timestamp = "<t:" + message_timestamp + ">"
-    # message_to_send is the message that will be sent to the channel.
-    # The first line of the contents of message_to_send is:
-    # @<AUTHOR> in #<CHANNEL>, at message_timestamp:
-    # Where @<AUTHOR> is the username of the message author, #<CHANNEL> is the name of the channel the message was
-    # sent in, and message_timestamp is the discord-formatted message timestamp.
-    message_to_send = "@" + message_author.name + " in #" + message.channel.name + ", at " + message_timestamp + ":\n"
-    # The message_to_send is then appended with the contents of the message.
-    message_to_send = message_to_send + message_contents
-    # The message_to_send is then sent to the channel the message was sent in.
-    await ctx.send(message_to_send)
-
-
+bot.run(BOT_TOKEN)
