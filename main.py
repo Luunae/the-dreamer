@@ -12,8 +12,9 @@ import validators
 
 load_dotenv(verbose=True)
 
+UTC_OFFSET = -7 * 3600
 BOT_TOKEN = str(os.getenv("DISCORD_TOKEN"))
-bot = discord.Client()
+dreamer = discord.Client()
 
 description = (
     """A simple bot that pastes the contents of the linked message to the channel."""
@@ -22,7 +23,7 @@ description = (
 intents = discord.Intents.default()
 intents.members = True
 
-bot = commands.Bot(
+dreamer = commands.Bot(
     command_prefix="!",
     description=description,
     intents=intents,
@@ -42,10 +43,15 @@ def replace_text_with_quoted_text(message: discord.Message):
 
 def compose_quote(message: discord.Message):
     message = replace_text_with_quoted_text(message)
-    quote: str = f'__@{message.author}__ in **#{message.channel}** at <Timestamps included in the "Lucid figures out how the fuck datetimes work" DLC.>:\n'
+    # Use the datetime library to convert message.created_at to a integer timestamp in UTC-7.
+    created_timestamp = int(message.created_at.timestamp()) + UTC_OFFSET
+    quote: str = (
+        f"__@{message.author}__ in **#{message.channel}** at <t:{created_timestamp}>:\n"
+    )
     quote += message.content
-    # if message.edited_at:
-    #     quote += f"\n\nEdited at <t:{datetime.timestamp(message.edited_at)}>"
+    if message.edited_at:
+        edited_timestamp = int(message.edited_at.timestamp()) + UTC_OFFSET
+        quote += f"\n\nEdited at <t:{edited_timestamp}>"
     return quote
 
 
@@ -60,7 +66,7 @@ async def get_message_from_url(link: str):
     message_id = int(split_link[6])
 
     # Use the bot to get the guild object.
-    guild: Guild = bot.get_guild(server_id)
+    guild: Guild = dreamer.get_guild(server_id)
     # Use the bot to get the channel object.
     channel: GuildChannel = guild.get_channel(channel_id)
     if not isinstance(channel, discord.TextChannel):
@@ -78,19 +84,19 @@ async def get_message_from_url(link: str):
     return message
 
 
-@bot.event
+@dreamer.event
 async def on_ready():
     print("Logged in as")
-    print(bot.user.name)
-    print(bot.user.id)
+    print(dreamer.user.name)
+    print(dreamer.user.id)
     print("------")
 
 
 # Start a function that runs on every message.
-@bot.event
+@dreamer.event
 async def on_message(message):
     # If the message is from a bot, ignore it.
-    if message.author.bot:
+    if message.author.id == dreamer.user.id:
         return
 
     # If the message is from a user, and the message starts with the prefix,
@@ -98,6 +104,9 @@ async def on_message(message):
     if message.content.startswith("http"):
         if url_is_valid(message.content):
             message_from_url = await get_message_from_url(message.clean_content)
+            # If message_from_url is from a different guild than message, ignore it.
+            if message_from_url.guild != message.guild:
+                return
             if message_from_url:
                 quote = compose_quote(message_from_url)
                 if len(message_from_url.attachments) > 1:
@@ -114,4 +123,4 @@ async def on_message(message):
                     await message.channel.send(content=quote)
 
 
-bot.run(BOT_TOKEN)
+dreamer.run(BOT_TOKEN)
