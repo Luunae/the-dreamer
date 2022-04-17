@@ -100,9 +100,9 @@ async def on_message(message):
 
     # If the message is from a user, and the message starts with the prefix,
     # then run the function.
-    if message.content.startswith("http"):
-        if url_is_valid(message.content):
-            message_from_url = await get_message_from_url(message.clean_content)
+    if "http" in message.content:
+        if url_is_valid("http" + message.content.split("http")[1].split()[0]):
+            message_from_url = await get_message_from_url("http" + message.clean_content.split("http")[1].split()[0])
             # If message_from_url is from a different guild than message, ignore it.
             if message_from_url.guild != message.guild:
                 return
