@@ -7,12 +7,11 @@ from discord import Guild
 from discord.abc import GuildChannel
 from discord.ext import commands
 from dotenv import load_dotenv
-from datetime import datetime
 import validators
 
 load_dotenv(verbose=True)
 
-UTC_OFFSET = -7 * 3600
+UTC_OFFSET = -7 * 3600 # Goddesses I fucking hate this.
 BOT_TOKEN = str(os.getenv("DISCORD_TOKEN"))
 dreamer = discord.Client()
 
@@ -106,6 +105,10 @@ async def on_message(message):
             message_from_url = await get_message_from_url(message.clean_content)
             # If message_from_url is from a different guild than message, ignore it.
             if message_from_url.guild != message.guild:
+                return
+            # Check if the sender of the original message is in the channel the message_from_url is in.
+            # If they are not in the same channel, ignore the message.
+            if message.author not in message_from_url.channel.members:
                 return
             if message_from_url:
                 quote = compose_quote(message_from_url)
