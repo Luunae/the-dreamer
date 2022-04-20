@@ -97,42 +97,6 @@ async def get_message_from_url(link: str):
 
 
 @dreamer.command()
-async def quote(ctx, arg: str):
-    if url_is_valid(arg):
-        message_from_url = await get_message_from_url(
-            "http" + ctx.message.clean_content.split("http")[1].split()[0]
-        )
-        # If message_from_url is from a different guild than message, ignore it.
-        if message_from_url.guild != ctx.guild:
-            await mark_command_invalid(ctx)
-            return
-        # Check if the sender of the original message is in the channel the message_from_url is in.
-        # If they are not in the same channel, mark the command invalid.
-        if ctx.author not in message_from_url.channel.members:
-            await mark_command_invalid(ctx)
-            return
-        if message_from_url:
-            quote = compose_quote(message_from_url)
-            if len(message_from_url.attachments) > 1:
-                attachments_to_send = []
-                # For each attachment in message_from_url, convert it to a file then add that file to
-                # attachments_to_send.
-                for attachment in message_from_url.attachments:
-                    attachments_to_send.append(await attachment.to_file())
-                await ctx.send(quote, files=attachments_to_send)
-            elif len(message_from_url.attachments) == 1:
-                # Convert the only attachment from message_from_url to a file, then add that file to attachment_to_send.
-                attachment_to_send = await message_from_url.attachments[0].to_file()
-                await ctx.send(quote, file=attachment_to_send)
-            else:
-                await ctx.send(content=quote)
-        else:
-            await mark_command_invalid(ctx)
-    else:
-        await mark_command_invalid(ctx)
-
-
-@dreamer.command()
 async def teleport(ctx, arg: str):
     # TODO: Add a command to teleport to a channel.
     pass
@@ -144,6 +108,43 @@ async def on_ready():
     print(dreamer.user.name)
     print(dreamer.user.id)
     print("------")
+
+
+# Start a function that runs on every message.
+@dreamer.event
+async def on_message(message):
+    # If the message is from a bot, ignore it.
+    if message.author.id == dreamer.user.id:
+        return
+
+    # If the message is from a user, and the message starts with the prefix,
+    # then run the function.
+    if "http" in message.content:
+        if url_is_valid("http" + message.content.split("http")[1].split()[0]):
+            message_from_url = await get_message_from_url("http" + message.clean_content.split("http")[1].split()[0])
+            # If message_from_url is from a different guild than message, ignore it.
+            if message_from_url.guild != message.guild:
+                return
+            # Check if the sender of the original message is in the channel the message_from_url is in.
+            # If they are not in the same channel, ignore the message.
+            if message.author not in message_from_url.channel.members:
+                return
+            if message_from_url:
+                quote = compose_quote(message_from_url)
+                if len(message_from_url.attachments) > 1:
+                    attachments_to_send = []
+                    # For each attacment in message_from_url, convert it to a file then add that file to
+                    # attachments_to_send.
+                    for attachment in message_from_url.attachments:
+                        attachments_to_send.append(await attachment.to_file())
+                    await message.channel.send(quote, files=attachments_to_send)
+                elif len(message_from_url.attachments) == 1:
+                    # Convert the only attachment from message_from_url to a file, then add that file to
+                    # attachment_to_send.
+                    attachment_to_send = await message_from_url.attachments[0].to_file()
+                    await message.channel.send(quote, file=attachment_to_send)
+                else:
+                    await message.channel.send(content=quote)
 
 
 dreamer.run(BOT_TOKEN)
