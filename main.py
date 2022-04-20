@@ -8,6 +8,7 @@ from discord.abc import GuildChannel
 from discord.ext import commands
 from dotenv import load_dotenv
 import validators
+import re
 
 load_dotenv(verbose=True)
 
@@ -96,10 +97,30 @@ async def get_message_from_url(link: str):
     return message
 
 
-@dreamer.command()
+def teleport_from(ctx):
+    message = "Teleport from: " + ctx.message.channel.mention + ", cast by " + str(ctx.message.author) + ":"
+    return message
+
+
+def teleport_to(ctx, arg):
+    message = "Teleport to: " + arg + ", cast by " + str(ctx.message.author) + ":"
+    return message
+
+
+@dreamer.command(name="teleport", aliases=["tp"])
 async def teleport(ctx, arg: str):
-    # TODO: Add a command to teleport to a channel.
-    pass
+    try:
+        portal_exit_channel = dreamer.get_channel(int(re.sub("\D", "", arg)))
+        if portal_exit_channel == ctx.channel:
+            await mark_command_invalid(ctx)
+            return
+    except ValueError:
+        await mark_command_invalid(ctx)
+        return
+    portal_entrance = await ctx.send(teleport_to(ctx, arg))
+    portal_exit = await portal_exit_channel.send(teleport_from(ctx))
+    await portal_entrance.edit(content=portal_entrance.content + "\n" + portal_exit.jump_url)
+    await portal_exit.edit(content=portal_exit.content + "\n" + portal_entrance.jump_url)
 
 
 @dreamer.event
@@ -113,7 +134,7 @@ async def on_ready():
 # Start a function that runs on every message.
 @dreamer.event
 async def on_message(message):
-    # If the message is from a bot, ignore it.
+    # If the message is from this bot, ignore it.
     if message.author.id == dreamer.user.id:
         return
 
@@ -145,6 +166,9 @@ async def on_message(message):
                     await message.channel.send(quote, file=attachment_to_send)
                 else:
                     await message.channel.send(content=quote)
+
+    # Process various commands.
+    await dreamer.process_commands(message)
 
 
 dreamer.run(BOT_TOKEN)
