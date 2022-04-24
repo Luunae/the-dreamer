@@ -2,20 +2,19 @@
 # It is used to create a bot object and run the bot.
 # This bot uses the discord.py library.
 import os
+import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 import quote_unroll
 import teleport
-from utilities import *
+import sqlite3
 
 load_dotenv(verbose=True)
 
 BOT_TOKEN = str(os.getenv("DISCORD_TOKEN"))
 # dreamer = discord.Client()
 
-description = (
-    """A simple bot that pastes the contents of the linked message to the channel."""
-)
+description = """A simple utility bot."""
 
 intents = discord.Intents.default()
 intents.members = True
@@ -39,4 +38,3 @@ async def on_ready():
 dreamer.add_cog(quote_unroll.QuoteUnroll(dreamer))
 dreamer.add_cog(teleport.Teleport(dreamer))
 dreamer.run(BOT_TOKEN)
-

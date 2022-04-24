@@ -1,6 +1,6 @@
+import discord
 from discord.ext import commands
-
-from utilities import *
+from utilities import url_is_valid, replace_text_with_quoted_text
 
 UTC_OFFSET = -7 * 3600  # Goddesses I fucking hate this.
 
@@ -9,9 +9,7 @@ def compose_quote(message: discord.Message):
     message = replace_text_with_quoted_text(message)
     # Use the datetime library to convert message.created_at to a integer timestamp in UTC-7.
     created_timestamp = int(message.created_at.timestamp()) + UTC_OFFSET
-    quote: str = (
-        f"__@{message.author}__ in **#{message.channel}** at <t:{created_timestamp}>:\n"
-    )
+    quote: str = f"__@{message.author}__ in **#{message.channel}** at <t:{created_timestamp}>:\n"
     quote += message.content
     if message.edited_at:
         edited_timestamp = int(message.edited_at.timestamp()) + UTC_OFFSET
@@ -34,9 +32,9 @@ class QuoteUnroll(commands.Cog):
         message_id = int(split_link[6])
 
         # Use the bot to get the guild object.
-        guild: Guild = self.dreamer.get_guild(server_id)
+        guild: discord.Guild = self.dreamer.get_guild(server_id)
         # Use the bot to get the channel object.
-        channel: GuildChannel = guild.get_channel(channel_id)
+        channel: discord.GuildChannel = guild.get_channel(channel_id)
         if not isinstance(channel, discord.TextChannel):
             return False
         # Get the message object from the channel.
@@ -60,9 +58,13 @@ class QuoteUnroll(commands.Cog):
         # If the message is from a user, and the message starts with the prefix,
         # then run the function.
         if "http" in message.content:
-            if url_is_valid("http" + message.content.split("http")[1].split()[0]):
+            url = "http" + message.content.split("http")[1].split()[0]
+            if url_is_valid(url):
+                if ("discord" not in url) and ("channels" not in url):
+                    return
                 message_from_url = await self.get_message_from_url(
-                    "http" + message.clean_content.split("http")[1].split()[0])
+                    "http" + message.clean_content.split("http")[1].split()[0]
+                )
                 # If message_from_url is from a different guild than message, ignore it.
                 if message_from_url.guild != message.guild:
                     return
@@ -77,12 +79,20 @@ class QuoteUnroll(commands.Cog):
                         # For each attachment in message_from_url, convert it to a file then add that file to
                         # attachments_to_send.
                         for attachment in message_from_url.attachments:
-                            attachments_to_send.append(await attachment.to_file())
-                        await message.channel.send(quote, files=attachments_to_send)
+                            attachments_to_send.append(
+                                await attachment.to_file()
+                            )
+                        await message.channel.send(
+                            quote, files=attachments_to_send
+                        )
                     elif len(message_from_url.attachments) == 1:
                         # Convert the only attachment from message_from_url to a file, then add that file to
                         # attachment_to_send.
-                        attachment_to_send = await message_from_url.attachments[0].to_file()
-                        await message.channel.send(quote, file=attachment_to_send)
+                        attachment_to_send = (
+                            await message_from_url.attachments[0].to_file()
+                        )  # This was done by black. Weird flex but okay.
+                        await message.channel.send(
+                            quote, file=attachment_to_send
+                        )
                     else:
                         await message.channel.send(content=quote)
