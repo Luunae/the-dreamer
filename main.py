@@ -38,3 +38,7 @@ async def on_ready():
 dreamer.add_cog(quote_unroll.QuoteUnroll(dreamer))
 dreamer.add_cog(teleport.Teleport(dreamer))
 dreamer.run(BOT_TOKEN)
+
+
+def get_bot():
+    return dreamer

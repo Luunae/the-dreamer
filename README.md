@@ -12,3 +12,5 @@ Sends a message quoting the message found at the link.
 
 
 Don't come to me asking for help, I barely know what this is doing.
+
+# Now with 100% more CURSED!
