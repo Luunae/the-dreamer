@@ -2,12 +2,11 @@ import discord
 import validators
 from typing import Optional, Union
 from discord.ext import commands
-from main import get_bot
-
-dreamer = get_bot()
+from bot import get_bot
 
 
 def isnt_me(message: discord.Message):
+    dreamer = get_bot()
     if message.author.id != dreamer.user.id:
         return False
     else:
@@ -27,7 +26,7 @@ async def clear_data_channel(channel: discord.TextChannel):
         pass
 
 
-def upsert_shitty_db(
+async def upsert_shitty_db(
     source: Union[discord.User, discord.TextChannel], data: tuple
 ):
     shitty_db = get_shitty_db(source)

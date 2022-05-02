@@ -7,7 +7,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import quote_unroll
 import teleport
-import sqlite3
+import bot
 
 load_dotenv(verbose=True)
 
@@ -38,7 +38,4 @@ async def on_ready():
 dreamer.add_cog(quote_unroll.QuoteUnroll(dreamer))
 dreamer.add_cog(teleport.Teleport(dreamer))
 dreamer.run(BOT_TOKEN)
-
-
-def get_bot():
-    return dreamer
+bot.instance = dreamer
