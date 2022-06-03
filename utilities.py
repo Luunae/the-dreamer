@@ -93,8 +93,9 @@ def url_is_valid(link: str):
 
 
 def replace_text_with_quoted_text(message: discord.Message):
-    message.content = "> " + message.content
-    message.content = message.content.replace("\n", "\n> ")
+    if len(message.content) > 0:
+        message.content = "> " + message.content
+        message.content = message.content.replace("\n", "\n> ")
     return message
 
 

@@ -10,15 +10,11 @@ import teleport
 import bot
 
 load_dotenv(verbose=True)
-
 BOT_TOKEN = str(os.getenv("DISCORD_TOKEN"))
 # dreamer = discord.Client()
-
 description = """A simple utility bot."""
-
 intents = discord.Intents.default()
 intents.members = True
-
 dreamer = commands.Bot(
     command_prefix="!",
     description=description,
