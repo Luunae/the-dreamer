@@ -35,6 +35,30 @@ class Utilities(commands.Cog):
             content=portal_exit.content + "\n" + portal_entrance.jump_url
         )
 
+    @commands.command(name="unshort", aliases=["us"])
+    async def unshorten(self, ctx):
+        """
+        Converts a Youtube Shorts link to a standard Youtube link.
+        A Youtube Shorts link looks like: https://youtube.com/shorts/[ID]
+        where [ID] is a Youtube Video ID, such as N2EsSCxfjl0
+        A standard Youtube link looks like https://www.youtube.com/watch?v=[ID]
+        """
+        message_to_act_on = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        if not url_is_valid(message_to_act_on.content):
+            await mark_command_invalid(ctx)
+            return
+        if "youtube.com/shorts/" in message_to_act_on.content:
+            # Get everything in the link after the last slash.
+            video_id = message_to_act_on.content.split("/")[-1]
+            # If there is a question mark in the video id, remove it and everything after it.
+            if "?" in video_id:
+                video_id = video_id.split("?")[0]
+            message_to_send = "https://www.youtube.com/watch?v=" + video_id
+
+            await ctx.send(message_to_send)
+        else:
+            await mark_command_invalid(ctx)
+
 
 def teleport_from(ctx):
     message = (

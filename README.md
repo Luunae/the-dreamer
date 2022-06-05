@@ -5,6 +5,9 @@
 Its features are:
 - A `!teleport` (alias: `!tp`) function:
 Redirect to a different channel.
+- A `!unshort` (alias: `!us`) function:
+Reply to a message with this command to repost an unshortened Youtube link.
+
 - Quote Unrolling (No command, simply link a discord message in the same server):
 Sends a message quoting the message found at the link.
 
