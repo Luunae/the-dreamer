@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from utilities import url_is_valid, replace_text_with_quoted_text
+from utilities import url_is_valid, replace_text_with_quoted_text, get_emojis
 
 UTC_OFFSET = -7 * 3600  # Goddesses I fucking hate this.
 
@@ -52,57 +52,52 @@ class QuoteUnroll(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         # If the message is from this bot, ignore it.
-        try:
-            return
-        finally:
-            if message.author.id == self.dreamer.user.id:
-                return
 
-            # If the message is from a user, and the message starts with the prefix,
-            # then run the function.
-            if "http" in message.content:
-                try:
+        if message.author.id == self.dreamer.user.id:
+            return
+
+        # If the message is from a user, and the message starts with the prefix,
+        # then run the function.
+        if "http" in message.content:
+            url = "http" + message.content.split("http")[1].split()[0]
+            if url_is_valid(url):
+                if ("discord" not in url) and ("channels" not in url):
                     return
-                finally:
-                    url = "http" + message.content.split("http")[1].split()[0]
-                    if url_is_valid(url):
-                        if ("discord" not in url) and ("channels" not in url):
-                            return
-                        message_from_url = await self.get_message_from_url(
-                            "http"
-                            + message.clean_content.split("http")[1].split()[0]
+                message_from_url = await self.get_message_from_url(
+                    "http"
+                    + message.clean_content.split("http")[1].split()[0]
+                )
+                # If message_from_url is from a different guild than message, ignore it.
+                if message_from_url.guild != message.guild:
+                    return
+                # Check if the sender of the original message is in the channel the message_from_url is in.
+                # If they are not in the same channel, ignore the message.
+                if (
+                    message.author
+                    not in message_from_url.channel.members
+                ):
+                    return
+                if message_from_url:
+                    quote = compose_quote(message_from_url)
+                    if len(message_from_url.attachments) > 1:
+                        attachments_to_send = []
+                        # For each attachment in message_from_url, convert it to a file then add that file to
+                        # attachments_to_send.
+                        for attachment in message_from_url.attachments:
+                            attachments_to_send.append(
+                                await attachment.to_file()
+                            )
+                        await message.channel.send(
+                            quote, files=attachments_to_send
                         )
-                        # If message_from_url is from a different guild than message, ignore it.
-                        if message_from_url.guild != message.guild:
-                            return
-                        # Check if the sender of the original message is in the channel the message_from_url is in.
-                        # If they are not in the same channel, ignore the message.
-                        if (
-                            message.author
-                            not in message_from_url.channel.members
-                        ):
-                            return
-                        if message_from_url:
-                            quote = compose_quote(message_from_url)
-                            if len(message_from_url.attachments) > 1:
-                                attachments_to_send = []
-                                # For each attachment in message_from_url, convert it to a file then add that file to
-                                # attachments_to_send.
-                                for attachment in message_from_url.attachments:
-                                    attachments_to_send.append(
-                                        await attachment.to_file()
-                                    )
-                                await message.channel.send(
-                                    quote, files=attachments_to_send
-                                )
-                            elif len(message_from_url.attachments) == 1:
-                                # Convert the only attachment from message_from_url to a file, then add that file to
-                                # attachment_to_send.
-                                attachment_to_send = await message_from_url.attachments[
-                                    0
-                                ].to_file()  # This was done by black. Weird flex but okay.
-                                await message.channel.send(
-                                    quote, file=attachment_to_send
-                                )
-                            else:
-                                await message.channel.send(content=quote)
+                    elif len(message_from_url.attachments) == 1:
+                        # Convert the only attachment from message_from_url to a file, then add that file to
+                        # attachment_to_send.
+                        attachment_to_send = await message_from_url.attachments[
+                            0
+                        ].to_file()  # This was done by black. Weird flex but okay.
+                        await message.channel.send(
+                            quote, file=attachment_to_send
+                        )
+                    else:
+                        await message.channel.send(content=quote)

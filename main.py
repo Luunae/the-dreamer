@@ -59,4 +59,3 @@ async def on_ready():
 dreamer.add_cog(quote_unroll.QuoteUnroll(dreamer))
 dreamer.add_cog(utilities.Utilities(dreamer))
 dreamer.run(BOT_TOKEN)
-bot.instance = dreamer
