@@ -64,18 +64,14 @@ class QuoteUnroll(commands.Cog):
                 if ("discord" not in url) and ("channels" not in url):
                     return
                 message_from_url = await self.get_message_from_url(
-                    "http"
-                    + message.clean_content.split("http")[1].split()[0]
+                    "http" + message.clean_content.split("http")[1].split()[0]
                 )
                 # If message_from_url is from a different guild than message, ignore it.
                 if message_from_url.guild != message.guild:
                     return
                 # Check if the sender of the original message is in the channel the message_from_url is in.
                 # If they are not in the same channel, ignore the message.
-                if (
-                    message.author
-                    not in message_from_url.channel.members
-                ):
+                if message.author not in message_from_url.channel.members:
                     return
                 if message_from_url:
                     quote = compose_quote(message_from_url)
@@ -93,9 +89,9 @@ class QuoteUnroll(commands.Cog):
                     elif len(message_from_url.attachments) == 1:
                         # Convert the only attachment from message_from_url to a file, then add that file to
                         # attachment_to_send.
-                        attachment_to_send = await message_from_url.attachments[
-                            0
-                        ].to_file()  # This was done by black. Weird flex but okay.
+                        attachment_to_send = (
+                            await message_from_url.attachments[0].to_file()
+                        )  # This was done by black. Weird flex but okay.
                         await message.channel.send(
                             quote, file=attachment_to_send
                         )

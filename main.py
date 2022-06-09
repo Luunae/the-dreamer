@@ -22,7 +22,7 @@ intents.members = True
 class MyHelpCommand(DefaultHelpCommand):
     def __init__(self, **options):
         super().__init__(**options)
-        self.no_category = options.pop('no_category', 'Uncategorized')
+        self.no_category = options.pop("no_category", "Uncategorized")
 
     def add_indented_commands(self, commands, *, heading, max_size=None):
         if not commands:
@@ -35,9 +35,13 @@ class MyHelpCommand(DefaultHelpCommand):
         for command in commands:
             name = command.name
             width = max_size - (get_width(name) - len(name))
-            entry = '{0}{1:<{width}} {2}'.format(self.indent * ' ', name, command.short_doc, width=width)
+            entry = "{0}{1:<{width}} {2}".format(
+                self.indent * " ", name, command.short_doc, width=width
+            )
             self.paginator.add_line(self.shorten_text(entry))
-            self.paginator.add_line('\u200b')  # only changed thing from super >.>
+            self.paginator.add_line(
+                "\u200b"
+            )  # only changed thing from super >.>
 
 
 dreamer = commands.Bot(
@@ -45,7 +49,7 @@ dreamer = commands.Bot(
     description=description,
     intents=intents,
     allowed_mentions=discord.AllowedMentions().none(),
-    help_command=MyHelpCommand()
+    help_command=MyHelpCommand(),
 )
 
 

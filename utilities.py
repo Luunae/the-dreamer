@@ -77,13 +77,20 @@ class Utilities(commands.Cog):
             return
         else:
             emoji_url = get_emoji_link(ctx)
-            request = urllib.request.Request(url=emoji_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36'})
+            request = urllib.request.Request(
+                url=emoji_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36"
+                },
+            )
             with urllib.request.urlopen(request) as response:
                 stolen_emoji = response.read()
             emoji_name = ctx.message.content.split(">")[-1].strip()
             reason = "Stolen By: " + ctx.author.name
             try:
-                await ctx.guild.create_custom_emoji(name=emoji_name, image=stolen_emoji, reason=reason)
+                await ctx.guild.create_custom_emoji(
+                    name=emoji_name, image=stolen_emoji, reason=reason
+                )
             except discord.Forbidden:
                 await ctx.send(
                     "Missing manage_emojis permission. (Probably)\nIf the bot has this permission, poke Lucid for debugging."
@@ -91,9 +98,21 @@ class Utilities(commands.Cog):
                 await mark_command_invalid(ctx)
                 return
             if ctx.guild.emojis[-1].animated:
-                message_to_send = "<a:" + ctx.guild.emojis[-1].name + ":" + str(ctx.guild.emojis[-1].id) + ">"
+                message_to_send = (
+                    "<a:"
+                    + ctx.guild.emojis[-1].name
+                    + ":"
+                    + str(ctx.guild.emojis[-1].id)
+                    + ">"
+                )
             else:
-                message_to_send = "<:" + ctx.guild.emojis[-1].name + ":" + str(ctx.guild.emojis[-1].id) + ">"
+                message_to_send = (
+                    "<:"
+                    + ctx.guild.emojis[-1].name
+                    + ":"
+                    + str(ctx.guild.emojis[-1].id)
+                    + ">"
+                )
             await ctx.send(message_to_send)
 
     @commands.command(name="GetEmojiLink", aliases=["getemojilink", "gel"])
@@ -187,6 +206,14 @@ def get_emoji_link(ctx: Context) -> str:
     emoji_to_get = get_emojis(ctx.message.content)[0]
     emoji_id = emoji_to_get.split(":")[-1].split(">")[0]
     if emoji_to_get[1] == "a":
-        return "https://cdn.discordapp.com/emojis/" + emoji_id + ".gif?quality=lossless"
+        return (
+            "https://cdn.discordapp.com/emojis/"
+            + emoji_id
+            + ".gif?quality=lossless"
+        )
     else:
-        return "https://cdn.discordapp.com/emojis/" + emoji_id + ".png?quality=lossless"
+        return (
+            "https://cdn.discordapp.com/emojis/"
+            + emoji_id
+            + ".png?quality=lossless"
+        )
