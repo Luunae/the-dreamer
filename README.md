@@ -14,7 +14,7 @@ If the server is close to the emoji limit, it will state so.
 Sends a message containing a clickable link to the emoji provided.
 - A `!emojisteal` (aliases: `!esteal`, `!es`)  
 Usage: `!emojisteal [emoji] desired_emoji_name`  
-Will add a note in the audit log saying added the emoji, using the `reason` field.
+Will add a note in the audit log saying who added the emoji, using the `reason` field.
 
 - Quote Unrolling (No command, simply link a discord message in the same server):  
 Sends a message quoting the message found at the link.
