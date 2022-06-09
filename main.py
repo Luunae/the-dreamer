@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord.ext.commands import DefaultHelpCommand
 from dotenv import load_dotenv
 import quote_unroll
+import shitty_db
 import utilities
 import bot
 
@@ -58,4 +59,5 @@ async def on_ready():
 
 dreamer.add_cog(quote_unroll.QuoteUnroll(dreamer))
 dreamer.add_cog(utilities.Utilities(dreamer))
+dreamer.add_cog(shitty_db.ShittyDatabase(dreamer))
 dreamer.run(BOT_TOKEN)
