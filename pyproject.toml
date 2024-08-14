@@ -1,16 +1,22 @@
-[tool.black]
-line-length = 79
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+[tool.poetry]
+name = "the-dreamer"
+version = "0.2.0"
+description = "A simple utility bot."
+authors = ["Luna <49705655+Luunae@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+black = "^24.8.0"
+"discord.py" = "^2.3.2"
+python-dotenv = "^1.0.1"
+validators = "^0.33.0"
+youtube-dl = "^2021.12.17"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

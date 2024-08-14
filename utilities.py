@@ -1,177 +1,63 @@
+from __future__ import unicode_literals
 import re
+import logging
+from datetime import datetime
 import discord
 import validators
 import urllib.request
 from discord.ext import commands
+from discord import app_commands
 from discord.ext.commands import Context
+import youtube_dl
 
 
 class Utilities(commands.Cog):
     def __init__(self, dreamer):
         self.dreamer: commands.Bot = dreamer
 
-    @commands.command(name="Teleport", aliases=["teleport", "tp"])
-    async def teleport(self, ctx: Context, arg: str):
-        """
-        Use this command to nudge discussion to a different channel.
-        `!tp [channel]`
-        (You must use a channel hyperlink of a channel that exists in the server the command is used in.)
-        """
-        try:
-            portal_exit_channel = self.dreamer.get_channel(
-                int(re.sub("\D", "", arg))
-            )
-            if portal_exit_channel == ctx.channel:
-                await mark_command_invalid(ctx)
-                return
-        except ValueError:
-            await mark_command_invalid(ctx)
-            return
-        portal_entrance = await ctx.send(teleport_to(ctx, arg))
-        portal_exit = await portal_exit_channel.send(teleport_from(ctx))
-        await portal_entrance.edit(
-            content=portal_entrance.content + "\n" + portal_exit.jump_url
-        )
-        await portal_exit.edit(
-            content=portal_exit.content + "\n" + portal_entrance.jump_url
+    @app_commands.command(name="teleport", description="Teleport to another channel")
+    @app_commands.describe(destination_channel="The channel to teleport to")
+    async def teleport(
+        self, interaction: discord.Interaction, destination_channel: discord.TextChannel
+    ):
+        source_channel = interaction.channel
+        user = interaction.user
+
+        # Send initial message in the source channel
+        source_message = await source_channel.send(
+            f"Teleporting to {destination_channel.mention} on behalf of {user.mention}."
         )
 
-    @commands.command(name="Unshort", aliases=["unshort", "us"])
-    async def unshorten(self, ctx: Context):
-        """
-        Converts a Youtube Shorts link to a standard Youtube link.
-        A Youtube Shorts link looks like: https://youtube.com/shorts/[ID]
-        where [ID] is a Youtube Video ID, such as N2EsSCxfjl0
-        A standard Youtube link looks like https://www.youtube.com/watch?v=[ID]
-        """
-        message_to_act_on = await ctx.channel.fetch_message(
-            ctx.message.reference.message_id
+        # Send message in the destination channel
+        destination_message = await destination_channel.send(
+            f"Teleport from {source_channel.mention} on behalf of {user.mention}, at {source_message.jump_url}."
         )
-        if not url_is_valid(message_to_act_on.content):
-            await mark_command_invalid(ctx)
+
+        # Edit the initial message in the source channel
+        await source_message.edit(
+            content=f"Teleport to {destination_channel.mention} on behalf of {user.mention}, exit: {destination_message.jump_url}."
+        )
+        await interaction.response.send_message(
+            "Teleportation succeeded.", ephemeral=True
+        )
+
+    @app_commands.command(
+        name="ytdl", description="use the ytdl library on a provided link"
+    )
+    @app_commands.describe(link="The link to download")
+    async def ytdl(self, interaction: discord.Interaction, link: str):
+        if not url_is_valid(link):
+            await interaction.response.send_message("Invalid link.", ephemeral=True)
             return
-        if "youtube.com/shorts/" in message_to_act_on.content:
-            # Get everything in the link after the last slash.
-            video_id = message_to_act_on.content.split("/")[-1]
-            # If there is a question mark in the video id, remove it and everything after it.
-            if "?" in video_id:
-                video_id = video_id.split("?")[0]
-            message_to_send = "https://www.youtube.com/watch?v=" + video_id
 
-            await ctx.send(message_to_send)
-        else:
-            await mark_command_invalid(ctx)
+        # Download the video
+        with urllib.request.urlopen(link) as response:
+            video = response.read()
 
-    @commands.command(
-        name="EmojiSteal", aliases=["emojisteal", "es", "esteal"]
-    )
-    async def emoji_steal(self, ctx: Context):
-        """
-        Steals an emoji.
-        Usage: !esteal [emoji] [emoji_name]
-        You must use a custom emoji.
-        """
-        if ctx.guild.emojis == ctx.guild.emoji_limit:
-            await ctx.send("This server has reached the emoji limit.")
-            await mark_command_invalid(ctx)
-            return
-        else:
-            emoji_url = get_emoji_link(ctx)
-            request = urllib.request.Request(
-                url=emoji_url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36"
-                },
-            )
-            with urllib.request.urlopen(request) as response:
-                stolen_emoji = response.read()
-            emoji_name = ctx.message.content.split(">")[-1].strip()
-            reason = "Stolen By: " + ctx.author.name
-            try:
-                await ctx.guild.create_custom_emoji(
-                    name=emoji_name, image=stolen_emoji, reason=reason
-                )
-            except discord.Forbidden:
-                await ctx.send(
-                    "Missing manage_emojis permission. (Probably)\nIf the bot has this permission, poke Lucid for debugging."
-                )
-                await mark_command_invalid(ctx)
-                return
-            if ctx.guild.emojis[-1].animated:
-                message_to_send = (
-                    "<a:"
-                    + ctx.guild.emojis[-1].name
-                    + ":"
-                    + str(ctx.guild.emojis[-1].id)
-                    + ">"
-                )
-            else:
-                message_to_send = (
-                    "<:"
-                    + ctx.guild.emojis[-1].name
-                    + ":"
-                    + str(ctx.guild.emojis[-1].id)
-                    + ">"
-                )
-            await ctx.send(message_to_send)
-
-    @commands.command(name="GetEmojiLink", aliases=["getemojilink", "gel"])
-    async def get_emoji_link(self, ctx: Context):
-        """
-        Gets the link to the emoji provided after the command.
-        Usage: !gel [emoji]
-        """
-        emoji_url = get_emoji_link(ctx)
-        message_to_send = "The link for the provided emoji is:\n\n" + emoji_url
-        await ctx.send(message_to_send)
-
-    @commands.command(
-        name="ReportEmojiLimit",
-        aliases=["reportemojilimit", "EmojiLimit", "emojilimit", "rel"],
-    )
-    async def report_emoji_limit(self, ctx: commands.Context):
-        """
-        Reports the emoji limit of the server.
-        """
-        if ctx.guild:
-            message_to_send = (
-                "The emoji limit for this server is "
-                + str(ctx.guild.emoji_limit)
-                + ".\nThe current number of emojis is "
-                + str(len(ctx.guild.emojis))
-                + "."
-            )
-            if ctx.guild.emoji_limit - len(ctx.guild.emojis) < 5:
-                message_to_send += (
-                    "\n\nYou are approaching the emoji limit for this server.\n Emoji slots left: "
-                    + str(ctx.guild.emoji_limit - len(ctx.guild.emojis))
-                )
-            await ctx.send(message_to_send)
-        else:
-            await mark_command_invalid(ctx)
-
-
-def teleport_from(ctx: Context):
-    message = (
-        "Teleport from: "
-        + ctx.message.channel.mention
-        + ", cast by "
-        + str(ctx.message.author)
-        + ":"
-    )
-    return message
-
-
-def teleport_to(ctx: Context, arg):
-    message = (
-        "Teleport to: " + arg + ", cast by " + str(ctx.message.author) + ":"
-    )
-    return message
-
-
-class Teleport(commands.Cog, name="Banana"):
-    def __init__(self, dreamer):
-        self.dreamer = dreamer
+        # Send the video
+        await interaction.response.send_message(
+            content=f"video requested by {interaction.user}", file=video
+        )
 
 
 def url_is_valid(link: str):
@@ -206,14 +92,6 @@ def get_emoji_link(ctx: Context) -> str:
     emoji_to_get = get_emojis(ctx.message.content)[0]
     emoji_id = emoji_to_get.split(":")[-1].split(">")[0]
     if emoji_to_get[1] == "a":
-        return (
-            "https://cdn.discordapp.com/emojis/"
-            + emoji_id
-            + ".gif?quality=lossless"
-        )
+        return "https://cdn.discordapp.com/emojis/" + emoji_id + ".gif?quality=lossless"
     else:
-        return (
-            "https://cdn.discordapp.com/emojis/"
-            + emoji_id
-            + ".png?quality=lossless"
-        )
+        return "https://cdn.discordapp.com/emojis/" + emoji_id + ".png?quality=lossless"
