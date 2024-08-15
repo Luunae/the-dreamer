@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "the-dreamer"
-version = "0.2.0"
+version = "0.2.2.1"
 description = "A simple utility bot."
 authors = ["Luna <49705655+Luunae@users.noreply.github.com>"]
 license = "MIT"
