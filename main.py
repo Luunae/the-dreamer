@@ -61,8 +61,8 @@ dreamer = commands.Bot(
 )
 
 
-@dreamer.command(name="sync", help="Sync commands with Discord")
-async def sync(ctx):
+@dreamer.command(name="gsync", help="Sync commands globally.")
+async def gsync(ctx):
     if ctx.author.id != DEVELOPER_USER_ID:
         await ctx.send("You do not have permission to use this command.")
         return
@@ -72,6 +72,22 @@ async def sync(ctx):
         synced = await ctx.bot.tree.sync()
         print(synced)
         await ctx.send(f"Synced {len(synced)} commands globally.")
+    except Exception as e:
+        print(f"Error syncing commands: {e}")
+        await ctx.send("An error occurred while syncing commands.")
+
+
+@dreamer.command(name="lsync", help="Sync commands locally.")
+async def lsync(ctx):
+    if ctx.author.id != DEVELOPER_USER_ID:
+        await ctx.send("You do not have permission to use this command.")
+        return
+
+    try:
+        print("Syncing commands...")
+        synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        print(synced)
+        await ctx.send(f"Synced {len(synced)} commands locally.")
     except Exception as e:
         print(f"Error syncing commands: {e}")
         await ctx.send("An error occurred while syncing commands.")
