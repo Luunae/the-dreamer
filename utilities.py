@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import os
 import re
 import logging
 from datetime import datetime
@@ -45,19 +46,34 @@ class Utilities(commands.Cog):
         name="ytdl", description="use the ytdl library on a provided link"
     )
     @app_commands.describe(link="The link to download")
+    @app_commands.guilds(929479192674992229)
     async def ytdl(self, interaction: discord.Interaction, link: str):
         if not url_is_valid(link):
             await interaction.response.send_message("Invalid link.", ephemeral=True)
             return
 
         # Download the video
-        with urllib.request.urlopen(link) as response:
-            video = response.read()
+        ydl_opts = {
+            "outtmpl": "video.mp4",
+            "format": "best[filesize<25M]",  # Discord limit. Can probably do shenanigans for boosted guilds.
+        }
+        try:
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([link])
+        except Exception as e:
+            await interaction.response.send_message(
+                "Error downloading video.", ephemeral=True
+            )
+            return
 
         # Send the video
         await interaction.response.send_message(
-            content=f"video requested by {interaction.user}", file=video
+            content=f"Interaction complete.",
+            file=discord.File("video.mp4"),
+            ephemeral=True,
         )
+        # Delete the video
+        os.remove("video.mp4")
 
 
 def url_is_valid(link: str):
