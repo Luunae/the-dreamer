@@ -46,7 +46,6 @@ class Utilities(commands.Cog):
         name="ytdl", description="use the ytdl library on a provided link"
     )
     @app_commands.describe(link="The link to download")
-    @app_commands.guilds(929479192674992229)
     async def ytdl(self, interaction: discord.Interaction, link: str):
         if not url_is_valid(link):
             await interaction.response.send_message("Invalid link.", ephemeral=True)
