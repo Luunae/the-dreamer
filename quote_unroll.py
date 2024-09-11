@@ -69,10 +69,14 @@ class QuoteUnroll(commands.Cog):
                     return
                 # Check if the sender of the original message is in the channel the message_from_url is in.
                 # If they are not in the same channel, ignore the message.
+                # I think this manages to ignore messages sent by Pluralkit, too!
+                # PK uses webhooks, and a webhook can't be a channel member.
+                # Maybe I should consider a ~2-second delay before sending the quote?
                 if message.author not in message_from_url.channel.members:
                     return
                 if message_from_url:
                     quote = compose_quote(message_from_url)
+                    # TODO 20240822: Check filesize, check message.guild.premium_subscription_count for filesize limit expansions.
                     if len(message_from_url.attachments) > 1:
                         attachments_to_send = []
                         # For each attachment in message_from_url, convert it to a file then add that file to
