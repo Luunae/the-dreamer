@@ -153,3 +153,4 @@ cython_debug/
 .env
 poetry.lock
 video.mp4
+saves/*

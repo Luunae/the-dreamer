@@ -10,6 +10,7 @@ from discord.ext.commands import DefaultHelpCommand
 from dotenv import load_dotenv
 import quote_unroll
 import utilities
+import idleon
 import bot  # TODO: 20240814: Figure out if this import is needed.
 
 # To run this bot as-is you need a .env file (the entire filename is four characters: ".env"),
@@ -98,6 +99,7 @@ async def on_ready():
     print("Logged in as")
     print(dreamer.user.name)
     print(dreamer.user.id)
+    print(f"Time: {discord.utils.utcnow().month}/{discord.utils.utcnow().day:02}/{discord.utils.utcnow().year} - {discord.utils.utcnow().hour - 7:02}:{discord.utils.utcnow().minute:02}:{discord.utils.utcnow().second:02}")
     print("------")
 
 
@@ -105,6 +107,7 @@ async def main():
     async with dreamer:
         await dreamer.add_cog(quote_unroll.QuoteUnroll(dreamer))
         await dreamer.add_cog(utilities.Utilities(dreamer))
+        await dreamer.add_cog(idleon.Idleon(dreamer))
         await dreamer.start(BOT_TOKEN)
 
 

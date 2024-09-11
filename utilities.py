@@ -11,6 +11,9 @@ from discord import app_commands
 from discord.ext.commands import Context
 import youtube_dl
 
+from idleon import TEST_SERVER_ID
+from idleon import DEVELOPER_USER_ID
+
 
 class Utilities(commands.Cog):
     def __init__(self, dreamer):
@@ -52,9 +55,10 @@ class Utilities(commands.Cog):
             return
 
         # Download the video
+        # TODO 20240903: Set filename to something more unique to avoid timing conflicts with multiple users.
         ydl_opts = {
             "outtmpl": "video.mp4",
-            "format": "best[filesize<25M]",  # Discord limit. Can probably do shenanigans for boosted guilds.
+            # "format": "best[filesize<25M]",  # Discord limit. Can probably do shenanigans for boosted guilds.
         }
         try:
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -73,6 +77,25 @@ class Utilities(commands.Cog):
         )
         # Delete the video
         os.remove("video.mp4")
+
+    @app_commands.command(name="relay_message", description="Send a message via the bot")
+    @app_commands.describe(message="The message to send")
+    async def relay_message(self, interaction: discord.Interaction, message: str):
+        message = message + f"\n-----\nSent by {interaction.user.mention}"
+        await interaction.response.send_message(message, ephemeral=False)
+
+    @app_commands.command(name="shutdown", description="Shutdown the bot")
+    @app_commands.describe(message="Shutdown message to send.")
+    async def shutdown(self, interaction: discord.Interaction, message: str=None):
+        if interaction.user.id != DEVELOPER_USER_ID:
+            await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+            return
+        if message is not None:
+            await interaction.response.send_message(f"Shutting down the bot.\nReason: {message}")
+        else:
+            await interaction.response.send_message("Shutting down the bot.")
+        await self.dreamer.close()
+        exit(0)
 
 
 def url_is_valid(link: str):

@@ -13,6 +13,7 @@ black = "^23.7.0"
 python-dotenv = "^1.0.1"
 validators = "^0.33.0"
 youtube-dl = "^2021.12.17"
+requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
